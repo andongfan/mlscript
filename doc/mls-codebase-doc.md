@@ -1,7 +1,6 @@
-# Document to the Codebase of the MLscript Compiler
+# Documentation of the Codebase of the MLscript Compiler
 
-This is the document to the codebase of the MLscript Compiler for the reuse
-of our MLscript implementation.
+This is the documentation of the codebase of the MLscript codebase.
 
 ## Overview
 
@@ -31,8 +30,7 @@ The corresponding files are:
 
 ### Typing
 
-A typer does type checking, that is, it accepts an abstract syntax tree of a program
-and type checks the program.
+A typer does type-checking, that is, it accepts an abstract syntax tree of a program and type-checks the program.
 MLscript's typer supports type inference with subtyping. For more about the type system,
 please refer to [MLstruct](https://dl.acm.org/doi/abs/10.1145/3563304).
 
@@ -144,7 +142,7 @@ The typer accepts a typing unit from the parser, types the typing unit, and retu
 During typing, the typer has its own **internal** representations of types
 (defined in `TyperDatatypes.scala`)
 with mutable states for type inference with subtyping. The typed typing unit
-is then sent to the type simplifier, and is finally expanded, i.e., to be converted
+is then sent to the type simplifier and is finally expanded, i.e., to be converted
 back to types in the surface syntax for presentation.
 
 We first introduce several typer datatypes defined in `TyperDatatypes.scala`:
@@ -181,7 +179,7 @@ and stored in the typing context. Note the typing context only uses `tyDefs2` to
 type definitions. Otherwise, it desugars the statement and calls `typeTerms` to type
 the desuguared statements. For a single `Term`, it will be passed to `typeTerm` to type.
 Method `typeTerm` types a term. If the term needs type information of a `LazyTypeInfo`,
-the lazy type will be completed. Subtyping contraints are generated during typing
+the lazy type will be completed. Subtyping constraints are generated during typing
 and will be sent to `ConstraintSolver` to propagate constraints to type variables.
 For more about type inference of subtyping, please refer to [MLstruct](https://dl.acm.org/doi/abs/10.1145/3563304).
 
