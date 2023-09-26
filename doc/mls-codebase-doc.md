@@ -1,7 +1,6 @@
 # Documentation of the MLscript Compiler Codebase (ECOOP 2023 Artifact)
 
-This is the documentation of the MLscript Compiler codebase for the reuse
-of our MLscript implementation.
+This is the documentation of the MLscript codebase.
 
 ## Overview
 
