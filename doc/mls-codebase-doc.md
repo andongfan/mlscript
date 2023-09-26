@@ -1,4 +1,4 @@
-# Documentation of the MLscript Compiler Codebase
+# Documentation of the MLscript Compiler Codebase (ECOOP 2023 Artifact)
 
 This is the documentation of the MLscript Compiler codebase for the reuse
 of our MLscript implementation.
@@ -17,7 +17,7 @@ The lexer accepts source strings and returns tokens to be parsed.
 The corresponding files are:
 
 - `NewLexer.scala` contains the lexer class.
-- `Token.scala` contains token data types.
+- `Token.scala` contains the token data types.
 
 ### Parsing
 
@@ -26,7 +26,7 @@ returns an abstract syntax tree of the input program in the surface syntax.
 The corresponding files are:
 
 - `NewParser.scala` contains the parser class.
-- `syntax.scala` contains **surface** syntax data types of the language.
+- `syntax.scala` contains the **surface** syntax data types of the language.
 
 ### Typing
 
@@ -180,9 +180,9 @@ Method `typeTypingUnit` accepts the typing unit to type. It inspects each statem
 in the typing unit. If the statement is a type definition, a `LazyTypeInfo` is produced
 and stored in the typing context (note the typing context only uses `tyDefs2` to store
 type definitions). Otherwise, it desugars the statement and calls `typeTerms` to type
-the desuguared statements. For a single `Term`, it is passed to `typeTerm` to type.
+the desugared statements. For a single `Term`, it is passed to `typeTerm` to type.
 Method `typeTerm` types a term. If the term needs type information of a `LazyTypeInfo`,
-the typing of that lazily typed definition will be completed. Subtyping contraints are generated during typing
+the typing of that lazily typed definition will be completed. Subtyping constraints are generated during typing
 and sent to `ConstraintSolver` to propagate constraints to type variables.
 For more about type inference of subtyping, please refer to [MLstruct](https://dl.acm.org/doi/abs/10.1145/3563304).
 
