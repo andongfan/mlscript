@@ -1,4 +1,4 @@
-# Documentation of the MLscript Compiler Codebase (ECOOP 2023 Artifact)
+# Documentation of the MLscript Codebase
 
 This is the documentation of the MLscript codebase.
 
@@ -54,9 +54,13 @@ type inference with subtyping.
 - `TyperHelpers.scala` contains class `TyperHelpers` that provides helper methods
 for the typer.
 
+Note that the inheritance relationships between these typer classes do *not* have any actual semantics
+- we are following Scala's *Cake Pattern*. Typer classes will be finally composed
+into the `Typer` class by inheritance.
+
 ### Code Generation
 
-The code generator translates MLscript AST into JavaScript AST and generates corresponding JavaScript code.
+The code generator translates MLscript AST into JavaScript AST and generates the corresponding JavaScript code.
 
 The corresponding files are:
 
@@ -68,7 +72,7 @@ The corresponding files are:
   and `ModuleSymbol` which include information on `class`, `mixin` and `module` definitions.
 - `JSBackend.scala` contains class `JSBackend` that translates an MLscript AST
   into a JavaScript AST. Classes `JSWebBackend` and `JSTestBackend` inherit class `JSBackend`
-  and generate adapted code for the web demo and testing.
+  and generate adapted code for the web demo and the test suite.
 
 ### Web Demo and Testing
 
@@ -83,29 +87,29 @@ It has a textbox for MLscript source code input and it produces typing and runni
 results live. The implementation can be tried online at https://hkust-taco.github.io/superoop/
 and locally in `/js/src/main/scala/Main.scala`.
 
-We have a "diff-based" test suite for our implementation.
+We have a "`diff`-based" test suite for our implementation.
 It detects changes to MLscript test sources (using git),
 generates typing and running results, and inserts those results
 into test sources. The diff-based testing implementation is in
 `/shared/src/test/scala/mlscript/DiffTests.scala`.
 MLscript test sources are in `/shared/src/test/diff`.
 
----
+## Detailed Introduction
 
 We now introduce the implementation of each compiler component
 in more detail.
 
-## Lexing
+### Lexing
 
 Class `NewLexer` in `NewLexer.scala` is the lexer class. It takes an `origin` object,
 which contains the original source string together with the source file name,
-the number of the first line, and some helper functions. Method `tokens` generates
-a list of tokens with their location in the source code. Method `bracketedTokens`
+the number of the first line, and some helper functions. Lazy value `tokens` generates
+a list of tokens with their location in the source code. Lazy value `bracketedTokens`
 converts the lexed tokens into *structured tokens*,
 which use `BRACKETS` constructs instead of `OPEN_BRACKET`/`CLOSE_BRACKET` and `INDENT`/`DEINDENT`.
 Token and structured token data types can be found in `Tokens.scala`.
 
-## Parsing
+### Parsing
 
 Class `NewParser` in `NewParser.scala` is the parser class. It takes a list
 of structured tokens with their location information. Method `typingUnit`
@@ -113,8 +117,8 @@ calls method `block` to parse the token list into a list of `Statement` or
 `IfBody` (defined in `syntax.scala`), filters out unexpected `then/else`
 clauses introduced by `Ifbody`, and returns a `TypingUnit` (a list of `Statement`).
 
-File `syntax.scala` contains surface syntax data types of MLscript
-which are *immutable*, different from internal representations in the typer for later type inference.
+File `syntax.scala` contains *immutable* surface syntax data types of MLscript,
+which are different from the internal representations in the typer for later type inference.
 Here we introduce several surface syntax data types:
 
 - Classes `Decl`, `TypeDef`, `MethodDef` are deprecated.
@@ -130,12 +134,12 @@ Case class `WithExtension` is for record type extension. For example, `A with {x
 is equivalent to `A\x & {x : int}`.
 - Class `TypeVar` represents the type variable. Its identifier can be an `Int`
 generated internally by the compiler or `Str` specified by the user.
-- Class `NuTypeDef` is a `NuDef` for type definitions.
+- Class `NuTypeDef` is a `NuDecl` for type definitions.
 Note that it has optional `superAnnot`
 and `thisAnnot` for precisely-typed open recursion.
-- Class `NuFunDef` is a `NuDef` for function and let-bindings.
+- Class `NuFunDef` is a `NuDecl` for function and let-bindings.
 
-## Typing
+### Typing
 
 The MLscript typer (class `Typer`) works with a typing context (class `Ctx`) which
 mainly maintains all global and local bindings of names to their types.
@@ -150,15 +154,14 @@ with mutable states for type inference with subtyping.
 We first introduce several typer data types defined in `TyperDatatypes.scala`:
 
 - Class `TypeProvenance` stores the location where a type is introduced.
-- Class `LazyTypeInfo` is for type definitions including classes, mixins, modules,
-and let-/fun-bindings. Its type is lazily computed to support *mutual recursive* type
+- Class `LazyTypeInfo` is for type definitions including classes, mixins, modules.
+Its type is lazily computed to support *mutual recursive* type
 definitions. It has a `complete` method to complete typing lazily typed definitions.
 - Class `PolymorphicType` represents a type with universally quantified type variables.
 By convention, in the type body, type variables of levels greater than
 the polymorphic type's level are polymorphic.
-- Class `Methodtype` is deprecated.
 - Class `SimpleType` is a general type form of all types.
-It has a field `level` for level-based polymorphism.
+It requires a method `level` for level-based polymorphism.
 - Class `BaseType` includes base types such as function, array, tuple, and class tag types.
 It can later be refined by `RecordType`.
 - Class `RecordType` is a record type. It has a list of bindings from record fields to their types.
@@ -175,19 +178,19 @@ Otherwise, `lb` is the lower bound of the type member.
 - Class `TypeVariable` represents a type variable, which has upper and lower bounds
 for type inference with subtyping.
 
-Method `typeTypingUnit` accepts the typing unit to type. It inspects each statement
-in the typing unit. If the statement is a type definition, a `LazyTypeInfo` is produced
-and stored in the typing context (note the typing context only uses `tyDefs2` to store
+Method `typeTypingUnit` in class `NuTypeDefs` accepts the typing unit to type. It inspects each statement
+in the typing unit. If the statement is a type definition, a `DelayedTypeInfo` (which is a subclass of `LazyTypeInfo`)
+is produced and stored in the typing context (note the typing context only uses `tyDefs2` to store
 type definitions). Otherwise, it desugars the statement and calls `typeTerms` to type
 the desugared statements. For a single `Term`, it is passed to `typeTerm` to type.
-Method `typeTerm` types a term. If the term needs type information of a `LazyTypeInfo`,
+Method `typeTerm` in class `Typer` types a term. If the term needs type information of a `LazyTypeInfo`,
 the typing of that lazily typed definition will be completed. Subtyping constraints are generated during typing
 and sent to `ConstraintSolver` to propagate constraints to type variables.
 For more about type inference of subtyping, please refer to [MLstruct](https://dl.acm.org/doi/abs/10.1145/3563304).
 
 Of particular interest,
 we introduce how classes and mixins are typed to implement precisely-typed open recursion in more detail.
-Method `complete` of `DelayedTypeInfoImpl`, which extends `LazyTypeInfo`,
+Method `complete` of `DelayedTypeInfoImpl`,
 types type definitions: classes, modules, and mixins and let-/fun-bindings.
 
 When a class (`Cls` which is a `NuTypeDef`) is typed, class fields are first
@@ -195,8 +198,8 @@ added into the typing context, and `this` is associated with a fresh type variab
 The `inherit` helper methods deal with the inheritance clauses of the type definitions.
 The inheritance process starts with an empty record type as the initial `super` type.
 It inspects each parent, accumulates members of parents, and updates the `super` type on the way.
-For each parent, it can only be a mixin with possible mixin arguments.
-If the typing context has the mixin defined, it completes the type of the mixin
+For each parent,
+if it is a mixin, and the typing context has that mixin defined, it completes the type of the mixin
 and freshens each type variable of the mixin, as each mixin's type should be constrained
 differently at different use-sites. Then, two subtyping constraints are generated:
 the current `super` type and the final
@@ -204,14 +207,14 @@ object type (`this` type) should be subtypes of the mixin's `super` and `this` t
 Finally, the mixin's members are accumulated to the class, and the current `super` type is
 updated using `WithType` because methods in mixins are always *overriding*.
 After processing the whole inheritance clause,
-we update the current `super` type with the class fields' types, and we constrain that
-the resulting `super` type (as the final object type) should be a subtype of the type of `this`
+we update the current `super` type with the class fields' types as `thisType`, and we constrain that
+the resulting `thisType` (i.e. the final object type) should be a subtype of `finalType`
 which is a type variable with all `this` type refinements of mixins accumulated.
 
 Typing of mixins is not that surprising. We associate `this` and `super`
 with fresh type variables in the typing context and then type the mixin body.
 
-## Code Generation
+### Code Generation
 
 The code generation consists of three steps.
 Firstly, class `JSBackend` translates MLscript data types (i.e. class `NuTypeDef`)
