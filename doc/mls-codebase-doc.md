@@ -223,13 +223,14 @@ based on those symbols.
 Finally, we generate JavaScript code from JavaScript AST nodes.
 
 The first step is implemented in the method `declareNewTypeDefs`.
-Here we extract information (including name, parameter list, type, members, and parents)
+Here we extract information (including name, parameter list, type, members, parents, and so on)
 of classes, mixins, and modules from the given `NuTypeDef` list and generate 
 a hygienic runtime name for each symbol.
 
 In the second step, we translate `NewClassSymbol`, `MixinSymbol`, and `ModuleSymbol`
-into JavaScript AST nodes by using methods `translateNewClassDeclaration`, `translateMixinDeclaration` and `translateModuleDeclaration`.
-All classes, mixins, and modules are translated into JavaScript classes.
+into JavaScript AST nodes by using methods `translateNewClassDeclaration`, `translateMixinDeclaration`, and `translateModuleDeclaration`.
+These three methods invoke another method `translateNewTypeDefinition` to translate
+classes, mixins, and modules into JavaScript classes.
 The method `translateNewClassMember` contains the translation of members.
 We call `translateParents` to get the parent class of a type.
 Assuming we have code:
@@ -268,7 +269,7 @@ We generate the JavaScript classes inside `typing_unit` objects.
 Note we create `...rest` parameters in each constructor of `mixin`
 because we have no information about the actual parent mixin until the mixin composition is finished.
 For modules, we store the instance of the JavaScript class in the cache.
-For classes,
+For classes, if they have primitive parameter lists,
 we store the arrow functions in the cache as class constructors that instantiate classes.
 Mixins have no constructor because of the uncertainty of the `base` parameter of mixins.
 
@@ -281,24 +282,31 @@ class Lit(n: int)
 
 The generated code would be:
 ```js
-let typing_unit = {
-  cache: {},
+class TypingUnit {
+  #Lit;
+  constructor() {
+  }
   get Lit() {
-    const cache = this.cache;
-    if (this.cache.Lit === undefined) {
+    const qualifier = this;
+    if (this.#Lit === undefined) {
       class Lit {
         #n;
-        get n() { return this.#n; }
         constructor(n) {
           this.#n = n;
         }
+      static
+        unapply(x) {
+          return [x.#n];
+        }
       };
-      this.cache.Lit = ((n) => new Lit(n));
-      this.cache.Lit["class"] = Lit;
+      this.#Lit = ((n) => Object.freeze(new Lit(n)));
+      this.#Lit.class = Lit;
+      this.#Lit.unapply = Lit.unapply;
     }
-    return this.cache.Lit;
+    return this.#Lit;
   }
-};
+}
+const typing_unit = new TypingUnit;
 globalThis.Lit = typing_unit.Lit;
 ```
 
@@ -313,9 +321,11 @@ mixin EvalBase {
 
 The generated code would be:
 ```js
-let typing_unit = {
-  cache: {},
+class TypingUnit {
+  constructor() {
+  }
   EvalBase(base) {
+    const qualifier = this;
     return (class EvalBase extends base {
       constructor(...rest) {
         super(...rest);
@@ -323,15 +333,16 @@ let typing_unit = {
       eval(e) {
         return ((() => {
           let a;
-          return (a = e, a instanceof Lit["class"] ? ((n) => n) (e.n) : (() => {
+          return (a = e, a instanceof Lit.class ? (([n]) => n)(Lit.unapply(e)) : (() => {
             throw new Error("non-exhaustive case expression");
           })());
         })());
       }
     });
   }
-};
-globalThis.EvalBase = typing_unit.EvalBase;
+}
+const typing_unit = new TypingUnit;
+globalThis.EvalBase = ((base) => typing_unit.EvalBase(base));
 ```
 
 For a module in MLscript:
@@ -341,21 +352,25 @@ module TestLang extends EvalBase, EvalNeg, EvalNegNeg
 
 The generated code would be like this:
 ```js
-let typing_unit = {
-  cache: {},
+class TypingUnit {
+  #TestLang;
+  constructor() {
+  }
   get TestLang() {
-    if (this.cache.TestLang === undefined) {
+    const qualifier = this;
+    if (this.#TestLang === undefined) {
       class TestLang extends EvalNegNeg(EvalNeg(EvalBase(Object))) {
         constructor() {
           super();
         }
       }
-      this.cache.TestLang = new TestLang();
-      this.cache.TestLang["class"] = TestLang;
+      this.#TestLang = new TestLang();
+      this.#TestLang.class = TestLang;
     }
-    return this.cache.TestLang;
+    return this.#TestLang;
   }
-};
+}
+const typing_unit = new TypingUnit;
 globalThis.TestLang = typing_unit.TestLang;
 ```
 
