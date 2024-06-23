@@ -185,117 +185,80 @@ mixin STLCBaseOpen[ThisVal, ThisExp] {
   type STLCBaseVal = Uni | Var | Lam[ThisExp]
   type STLCBaseExp = EVal[ThisVal] | EApp[ThisExp]
   
-  fun eval(e: STLCBaseExp): Option[ThisVal] =
+  fun eval(e: EVal[ThisVal | Uni | Var | Lam[ThisExp]] | EApp[ThisExp]): Option[ThisVal | Uni | Var | Lam[ThisExp]] =
     if e is
       EVal(v) then Some(v)
       EApp(e1, e2) then this.eval(e1).flatMap(f => this.apply(e2, f))
   
-  // Problem: We don't know Lam <: ThisVal and EVal <: ThisExp
-  // to fix this, we need STLCBaseVal <: ThisVal and STLCBaseExp <: ThisExp
-  fun subst(x: Num, e0: ThisExp, e: STLCBaseExp): ThisExp =
+  // we need STLCBaseVal <: ThisVal and STLCBaseExp <: ThisExp
+  fun subst(x: Num, e0: ThisExp, e: EVal[ThisVal | Uni | Var | Lam[ThisExp]] | EApp[ThisExp]): ThisExp | EVal[ThisVal | Lam[ThisExp] | Uni] | EApp[ThisExp] =
     if e is
-      // EVal(v) then this.substVal(x, e0, v)
-      EVal(v) then
-        if v is
-          Var(y) then e0
-          Lam(y, e1) then EVal(Lam(y, this.subst(x, e0, e1)))
-        else EVal(v) // e does not work here
+      EVal(v) then this.substVal(x, e0, v)
       EApp(e1, e2) then EApp(this.subst(x, e0, e1), this.subst(x, e0, e2))
   
-  // fun substVal(x, e0, v) =
-  //   if v is
-  //     Var(y) and y == x then e0
-  //     Lam(y, e1) then EVal(Lam(y, this.subst(x, e0, e1)))
-  //   else EVal(v)
+  fun substVal(x, e0, v) =
+    if v is
+      Var(y) and y == x then e0
+      Lam(y, e1) then EVal(Lam(y, this.subst(x, e0, e1)))
+    else EVal(v)
   
-  // to fix this, we need ThisVal <: Object
-  fun apply(e2: ThisExp, f: ThisVal): Option[ThisVal] =
+  // The follwing signature does not work:
+  // fun apply(e2: ThisExp, f: (ThisVal & Object) | Uni | Var | Lam[ThisExp]): Option[ThisVal] =
+  fun apply(e2: ThisExp, f: Uni | Var | Lam[ThisExp]): Option[ThisVal] =
     if f is
-      Lam(x, e) then this.eval(this.subst(x, e2, e))
+      Lam(x, e1) then this.eval(this.subst(x, e2, e1))
     else None
 }
-//│ ╔══[ERROR] Type `Var & ThisVal` does not contain member `Lam#E`
-//│ ║  l.21: 	class Lam[E](x: Num, e: E)
-//│ ╙──      	          ^
-//│ ╔══[ERROR] Type mismatch in type ascription:
-//│ ║  l.196: 	    if e is
-//│ ║         	       ^^^^
-//│ ║  l.197: 	      // EVal(v) then this.substVal(x, e0, v)
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.198: 	      EVal(v) then
-//│ ║         	^^^^^^^^^^^^^^^^^^
-//│ ║  l.199: 	        if v is
-//│ ║         	^^^^^^^^^^^^^^^
-//│ ║  l.200: 	          Var(y) then e0
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.201: 	          Lam(y, e1) then EVal(Lam(y, this.subst(x, e0, e1)))
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.202: 	        else EVal(v) // e does not work here
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.203: 	      EApp(e1, e2) then EApp(this.subst(x, e0, e1), this.subst(x, e0, e2))
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ╟── application of type `EVal[?V]` does not match type `ThisExp`
-//│ ║  l.201: 	          Lam(y, e1) then EVal(Lam(y, this.subst(x, e0, e1)))
-//│ ║         	                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ╟── Note: constraint arises from type parameter:
-//│ ║  l.183: 	mixin STLCBaseOpen[ThisVal, ThisExp] {
-//│ ╙──       	                            ^^^^^^^
-//│ ╔══[ERROR] Type mismatch in `case` expression:
-//│ ║  l.213: 	    if f is
-//│ ║         	       ^^^^
-//│ ║  l.214: 	      Lam(x, e) then this.eval(this.subst(x, e2, e))
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.215: 	    else None
-//│ ║         	^^^^^^^^^^^^^
-//│ ╟── reference of type `ThisVal` is not an instance of type `Object`
-//│ ║  l.213: 	    if f is
-//│ ║         	       ^
-//│ ╟── Note: type parameter ThisVal is defined at:
-//│ ║  l.183: 	mixin STLCBaseOpen[ThisVal, ThisExp] {
-//│ ╙──       	                   ^^^^^^^
 //│ mixin STLCBaseOpen[ThisVal, ThisExp]() {
 //│   this: {
 //│     apply: (ThisExp, 'a) -> 'b,
-//│     eval: ThisExp -> {flatMap: ('a -> 'b) -> Option[ThisVal]} & 'c -> Option[ThisVal],
-//│     subst: (Num, ThisExp, anything) -> anything & (Num, ThisExp, ??E) -> 'c
+//│     eval: ThisExp -> {flatMap: ('a -> 'b) -> Option[Lam[ThisExp] | Uni | Var | ThisVal]} & 'c -> Option[ThisVal],
+//│     subst: (Num, ThisExp, ThisExp) -> (ThisExp & 'c) & ('d, 'e, 'f) -> 'E,
+//│     substVal: (Num, ThisExp, Lam[ThisExp] | Uni | Var | ThisVal) -> (EApp[ThisExp] | EVal[Lam[ThisExp] | Uni | ThisVal] | ThisExp)
 //│   }
 //│   type STLCBaseExp = EApp[ThisExp] | EVal[ThisVal]
 //│   type STLCBaseVal = Lam[ThisExp] | Uni | Var
-//│   fun apply: (e2: ThisExp, f: ThisVal) -> Option[ThisVal]
-//│   fun eval: (e: STLCBaseExp) -> Option[ThisVal]
-//│   fun subst: (x: Num, e0: ThisExp, e: STLCBaseExp) -> ThisExp
+//│   fun apply: (e2: ThisExp, f: Lam[ThisExp] | Uni | Var) -> Option[ThisVal]
+//│   fun eval: (e: EApp[ThisExp] | EVal[Lam[ThisExp] | Uni | Var | ThisVal]) -> Option[Lam[ThisExp] | Uni | Var | ThisVal]
+//│   fun subst: (x: Num, e0: ThisExp, e: EApp[ThisExp] | EVal[Lam[ThisExp] | Uni | Var | ThisVal]) -> (EApp[ThisExp] | EVal[Lam[ThisExp] | Uni | ThisVal] | ThisExp)
+//│   fun substVal: (Num & 'd, 'e, Lam['f] | Object & 'V & ~#Lam & ~#Var | Var) -> (EVal[in 'V out 'V | Lam['E] | Var] | 'e)
 //│ }
 
 
-// FIXME
 module STLC1 extends STLCBaseOpen
-//│ ╔══[ERROR] Type error in type declaration
-//│ ║  l.271: 	module STLC1 extends STLCBaseOpen
-//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ╟── type variable `E` leaks out of its scope
-//│ ║  l.21: 	class Lam[E](x: Num, e: E)
-//│ ║        	                     ^
-//│ ╟── into type `EApp[ThisExp] | EVal[ThisVal]`
-//│ ║  l.186: 	  type STLCBaseExp = EVal[ThisVal] | EApp[ThisExp]
-//│ ║         	                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ╟── Note: constraint arises from type reference:
-//│ ║  l.195: 	  fun subst(x: Num, e0: ThisExp, e: STLCBaseExp): ThisExp =
-//│ ╙──       	                                    ^^^^^^^^^^^
-//│ ╔══[ERROR] Type `??E` does not contain member `EApp#E`
-//│ ║  l.28: 	class EApp[E](e1: E, e2: E)
-//│ ╙──      	           ^
-//│ ╔══[ERROR] Type `??E` does not contain member `EVal#V`
-//│ ║  l.27: 	class EVal[V](v: V)
-//│ ╙──      	           ^
 //│ module STLC1 {
 //│   type STLCBaseExp = EApp['ThisExp] | EVal['ThisVal]
 //│   type STLCBaseVal = Lam['ThisExp] | Uni | Var
-//│   fun apply: (e2: 'ThisExp, f: 'ThisVal) -> Option['ThisVal]
-//│   fun eval: (e: STLCBaseExp) -> Option['ThisVal]
-//│   fun subst: (x: Num, e0: 'ThisExp, e: STLCBaseExp) -> 'ThisExp
+//│   fun apply: (e2: 'ThisExp, f: Lam['ThisExp] | Uni | Var) -> Option['ThisVal]
+//│   fun eval: (e: EApp['ThisExp] | EVal['ThisVal]) -> Option['ThisVal]
+//│   fun subst: (x: Num, e0: 'ThisExp, e: EApp['ThisExp] | EVal['ThisVal]) -> 'ThisExp
+//│   fun substVal: forall 'V. (Num, 'a, Lam['b] | Object & 'V & ~#Lam & ~#Var | Var) -> (EVal[out Uni | 'V0 | 'V | Lam['E] | Var] | 'a)
 //│ }
 //│ where
-//│   'ThisExp <: STLCBaseExp
+//│   'E :> 'ThisExp
+//│   'ThisExp :> EApp['ThisExp] | EVal['ThisVal]
+//│            <: 'a & 'E0 & (EApp['ThisExp] | EVal['ThisVal])
+//│   'a := 'ThisExp
+//│   'ThisVal :> Lam['ThisExp] | Uni | Var
+//│            <: Lam['ThisExp & 'E0] | Var | 'V0 & (Lam['ThisExp] & ~#Lam | Uni)
+//│   'E0 <: 'b
+//│   'b <: EApp['ThisExp] | EVal['ThisVal]
+
+
+STLC1.eval(EApp(EVal(Lam(0, EVal(Var(0)))), EVal(Uni)))
+//│ Option['ThisVal]
+//│   where
+//│     'ThisVal :> Lam['ThisExp] | Uni | Var
+//│              <: Lam['ThisExp & 'E] | Var | Lam['ThisExp] & ~#Lam | Uni
+//│     'ThisExp :> EApp['ThisExp] | EVal['ThisVal & 'V & 'V0]
+//│              <: 'E & (EApp['ThisExp] | EVal['ThisVal])
+//│     'E <: EApp['ThisExp] | EVal['ThisVal]
+//│     'V0 :> Lam[in 'ThisExp out 'ThisExp | EVal['V1]] | 'ThisVal
+//│         <: 'ThisVal
+//│     'V1 :> Var
+//│     'V := 'ThisVal
+//│ res
+//│     = Some {}
 
 // ***********************  IF EXTENSION  ***********************
 module Tru
