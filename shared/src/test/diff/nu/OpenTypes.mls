@@ -204,6 +204,7 @@ mixin STLCBaseOpen[ThisVal, ThisExp] {
   // The follwing signature does not work:
   // fun apply(e2: ThisExp, f: (ThisVal & Object) | Uni | Var | Lam[ThisExp]): Option[ThisVal] =
   // because ThisVal may include Lam[???]
+  // Q: Do we need to disallow users to redefine existising variants with +=?
   fun apply(e2: ThisExp, f: (ThisVal & ~Lam & Object) | (Uni | Var | Lam[ThisExp])): Option[ThisVal] =
     if f is
       Lam(x, e1) then this.eval(this.subst(x, e2, e1))
@@ -435,76 +436,76 @@ type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
 // FIXME
 module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `EVal[ThisValFinal]` does not match type `EIf[ThisExp] | Object & BaseExp & ~#EIf`
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                    ^^^^^^^^^^^^^^^^^^
 //│ ╟── but it flows into type reference with expected type `EIf[ThisExp] | Object & BaseExp & ~#EIf`
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	                                                                                                                                                            ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.378: 	  type STLCIfExp = EIf[ThisExp] | BaseExp & ~EIf & Object
+//│ ║  l.379: 	  type STLCIfExp = EIf[ThisExp] | BaseExp & ~EIf & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from type reference:
-//│ ║  l.398: 	  fun subst(x: Num, e0: ThisExp, e: STLCIfExp): ThisExp | EIf[ThisExp] =
+//│ ║  l.399: 	  fun subst(x: Num, e0: ThisExp, e: STLCIfExp): ThisExp | EIf[ThisExp] =
 //│ ╙──       	                                    ^^^^^^^^^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `EApp[ThisExpFinal]` does not match type `EIf[ThisExp] | Object & BaseExp & ~#EIf`
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                                         ^^^^^^^^^^^^^^^^^^
 //│ ╟── but it flows into type reference with expected type `EIf[ThisExp] | Object & BaseExp & ~#EIf`
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	                                                                                                                                                            ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.378: 	  type STLCIfExp = EIf[ThisExp] | BaseExp & ~EIf & Object
+//│ ║  l.379: 	  type STLCIfExp = EIf[ThisExp] | BaseExp & ~EIf & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from type reference:
-//│ ║  l.398: 	  fun subst(x: Num, e0: ThisExp, e: STLCIfExp): ThisExp | EIf[ThisExp] =
+//│ ║  l.399: 	  fun subst(x: Num, e0: ThisExp, e: STLCIfExp): ThisExp | EIf[ThisExp] =
 //│ ╙──       	                                    ^^^^^^^^^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `EVal[ThisValFinal]` does not match type `ThisExp`
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                    ^^^^^^^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from type parameter:
-//│ ║  l.373: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
+//│ ║  l.374: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
 //│ ╙──       	                                        ^^^^^^^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `EApp[ThisExpFinal]` does not match type `ThisExp`
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                                         ^^^^^^^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from type parameter:
-//│ ║  l.373: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
+//│ ║  l.374: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
 //│ ╙──       	                                        ^^^^^^^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `EIf[ThisExpFinal]` does not match type `ThisExp`
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                                                              ^^^^^^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from type parameter:
-//│ ║  l.373: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
+//│ ║  l.374: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
 //│ ╙──       	                                        ^^^^^^^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `ThisExp` does not match type `EApp[ThisExpFinal] | EIf[ThisExpFinal] | EVal[ThisValFinal]`
-//│ ║  l.373: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
+//│ ║  l.374: 	mixin STLCIf[BaseVal, BaseExp, ThisVal, ThisExp] {
 //│ ║         	                                        ^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ║         	                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from type reference:
-//│ ║  l.428: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
+//│ ║  l.429: 	type ThisExpFinal = EVal[ThisValFinal] | EApp[ThisExpFinal] | EIf[ThisExpFinal]
 //│ ╙──       	                                                                  ^^^^^^^^^^^^
 //│ ╔══[ERROR] Type `ThisExp` does not contain member `EIf#E`
-//│ ║  l.287: 	class EIf[E](e: E, e1: E, e2: E)
+//│ ║  l.288: 	class EIf[E](e: E, e1: E, e2: E)
 //│ ╙──       	          ^
 //│ ╔══[ERROR] Type `ThisExp` does not contain member `EApp#E`
 //│ ║  l.28: 	class EApp[E](e1: E, e2: E)
@@ -513,61 +514,61 @@ module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var 
 //│ ║  l.27: 	class EVal[V](v: V)
 //│ ╙──      	           ^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `Uni` does not match type `Fal | Object & BaseVal | Tru`
-//│ ║  l.429: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
+//│ ║  l.430: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
 //│ ║         	                    ^^^
 //│ ╟── but it flows into type reference with expected type `Fal | Object & BaseVal | Tru`
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	                                                                                                                                              ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.377: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
+//│ ║  l.378: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from reference:
-//│ ║  l.389: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
+//│ ║  l.390: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
 //│ ╙──       	                                                                        ^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `Var` does not match type `Fal | Object & BaseVal | Tru`
-//│ ║  l.429: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
+//│ ║  l.430: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
 //│ ║         	                          ^^^
 //│ ╟── but it flows into type reference with expected type `Fal | Object & BaseVal | Tru`
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	                                                                                                                                              ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.377: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
+//│ ║  l.378: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from reference:
-//│ ║  l.389: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
+//│ ║  l.390: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
 //│ ╙──       	                                                                        ^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `Lam[ThisExpFinal]` does not match type `Fal | Object & BaseVal | Tru`
-//│ ║  l.429: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
+//│ ║  l.430: 	type ThisValFinal = Uni | Var | Lam[ThisExpFinal] | Tru | Fal
 //│ ║         	                                ^^^^^^^^^^^^^^^^^
 //│ ╟── but it flows into type reference with expected type `Fal | Object & BaseVal | Tru`
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	                                                                                                                                              ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.377: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
+//│ ║  l.378: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from reference:
-//│ ║  l.389: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
+//│ ║  l.390: 	      EIf(e, e1, e2) then this.eval(e).flatMap(b => this.branch(e1, e2, b))
 //│ ╙──       	                                                                        ^
 //│ ╔══[ERROR] Type mismatch in type declaration:
-//│ ║  l.436: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
+//│ ║  l.437: 	module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var | Lam[ThisExpFinal], EVal[ThisValFinal] | EApp[ThisExpFinal], ThisValFinal, ThisExpFinal]
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── type `Lam[?ThisExp]` does not match type `Fal | Object & BaseVal | Tru`
 //│ ║  l.193: 	  fun subst(x: Num, e0: ThisExp, e: EVal[ThisVal | Uni | Var | Lam[ThisExp]] | EApp[ThisExp]): ThisExp | EVal[ThisVal | Lam[ThisExp] | Uni] | EApp[ThisExp] =
 //│ ║         	                                                               ^^^^^^^^^^^^
 //│ ╟── Note: constraint arises from union type:
-//│ ║  l.377: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
+//│ ║  l.378: 	  type STLCIfVal = Tru | Fal | BaseVal & ~(Tru | Fal) & Object
 //│ ║         	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ╟── from type reference:
-//│ ║  l.403: 	  fun substVal(x: Num, e0: ThisExp, v: STLCIfVal) =
+//│ ║  l.404: 	  fun substVal(x: Num, e0: ThisExp, v: STLCIfVal) =
 //│ ╙──       	                                       ^^^^^^^^^
 //│ module STLC2 {
 //│   type STLCBaseExp = EApp['ThisExp] | EVal['ThisVal]
@@ -588,3 +589,15 @@ module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[Uni | Var 
 // Tried to hard-code BaseExp BaseVal into the mixin instead
 // Then it seems like ThisVal is not properly instantiated
 // module STLC2 extends STLCBaseOpen[ThisValFinal, ThisExpFinal], STLCIf[ThisValFinal, ThisExpFinal]
+
+// FIXME
+STLC2.eval(EIf(EVal(Tru), EApp(EVal(Lam(0, EVal(Var(0)))), EVal(Uni)), EVal(Fal)))
+//│ ╔══[ERROR] Type error in application
+//│ ║  l.594: 	STLC2.eval(EIf(EVal(Tru), EApp(EVal(Lam(0, EVal(Var(0)))), EVal(Uni)), EVal(Fal)))
+//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ╟── type variable `ThisExp` leaks out of its scope
+//│ ║  l.594: 	STLC2.eval(EIf(EVal(Tru), EApp(EVal(Lam(0, EVal(Var(0)))), EVal(Uni)), EVal(Fal)))
+//│ ╙──       	                                                                       ^^^^^^^^^
+//│ error
+//│ res
+//│     = Some {}
